@@ -1,0 +1,91 @@
+spring:
+  application:
+    name: user-service
+  profiles:
+    active: default
+  datasource:
+    url: jdbc:mysql://localhost:3306/user
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  config:
+    import: optional:configserver:http://localhost:8086
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://dev-82759172.okta.com/oauth2/default
+      client:
+        registration:
+          my-internal-client:
+            provider: okta
+            authorization-grant-type: client_credentials
+            scope: internal
+            client-id: 0oafu80vmyasQPFl25d7
+            client-secret: SsvirKeabmcu2S7c2O7C5WJZO4RNA-9xPH86SnxSKGcixRySsYBu-32YjeIK7z0L
+
+        provider:
+          okta:
+            issuer-uri:  https://dev-82759172.okta.com/oauth2/default
+
+server:
+  port: 8083
+
+#eureka:
+#  instance:
+#    prefer-ip-address: true
+#  client:
+#    fetch-registry: true
+#    register-with-eureka: true
+#    service-Url:
+#      defaultZone: http://localhost:8084/eureka
+
+management:
+  health:
+    circuitbreakers:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+  endpoint:
+    health:
+      show-details: always
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      userRatingHotelBreaker:
+        registerHealthIndicator: true
+        eventConsumerBufferSize: 10
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 6s
+        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowSize: 10
+        slidingWindowType: COUNT_BASED
+
+  retry:
+    instances:
+      ratingAndHoteLServiceRetry:
+        max-attempts: 3
+        wait-duration: 5s
+
+  ratelimiter:
+    instances:
+      userRateLimiter:
+        limit-refresh-period: 4s
+        limit-for-period: 3
+        timeout-duration: 2s
+
+okta:
+  oauth2:
+    issuer: https://dev-82759172.okta.com/oauth2/default
+    audience: api://default
